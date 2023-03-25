@@ -10,8 +10,8 @@ let package = Package(
         .tvOS(.v14)
     ],
     products: [
-        .library(name: "AutoLayout", type: .dynamic, targets: ["AutoLayout"]),
-        .library(name: "AutoLayoutStatic", type: .static, targets: ["AutoLayout"])
+        .library(name: "AutoLayout", type: .static, targets: ["AutoLayout"]),
+        .library(name: "AutoLayoutDynamic", type: .dynamic, targets: ["AutoLayout"])
     ],
     dependencies: [
         .package(url: "git@github.com:apple/swift-docc-plugin.git", from: "1.0.0")
