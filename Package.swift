@@ -1,4 +1,4 @@
-// swift-tools-version:5.7
+// swift-tools-version:6.1
 import PackageDescription
 
 let package = Package(
@@ -14,13 +14,13 @@ let package = Package(
         .library(name: "AutoLayoutDynamic", type: .dynamic, targets: ["AutoLayout"])
     ],
     dependencies: [
-        .package(url: "git@github.com:apple/swift-docc-plugin.git", from: "1.0.0")
+        .package(url: "git@github.com:apple/swift-docc-plugin.git", from: "1.4.3")
     ],
     targets: [
         .target(
             name: "AutoLayout",
             dependencies: [],
-            path: "sources/main"
+            path: "Sources/Main"
         )
     ]
 )

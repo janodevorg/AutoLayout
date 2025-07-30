@@ -19,6 +19,10 @@ public enum Sides {
     case top, trailing, bottom, leading
 }
 
+public enum AutoLayoutError: Error {
+    case missingSuperview
+}
+
 /**
  Autolayout library.
 
@@ -29,27 +33,27 @@ public enum Sides {
  
  Things you can do:
  ```
- view.al.pin()
- view.al.pinToLayoutMargins()
- view.al.pinToSafeArea()
- view.al.pinToReadableContent()
+ try view.al.pin()
+ try view.al.pinToLayoutMargins()
+ try view.al.pinToSafeArea()
+ try view.al.pinToReadableContent()
  
- view.al.pin(sides: [.leading, .trailing])
- view.al.pinToLayoutMargins(sides: [.top, .bottom])
- view.al.pinToSafeArea(sides: [.leading, .top, .trailing])
- view.al.pinToReadableContent(sides: [.top])
+ try view.al.pin(sides: [.leading, .trailing])
+ try view.al.pinToLayoutMargins(sides: [.top, .bottom])
+ try view.al.pinToSafeArea(sides: [.leading, .top, .trailing])
+ try view.al.pinToReadableContent(sides: [.top])
  
  view.al.set(width: 0)
  view.al.set(height: 0, priority: .defaultHigh)
  view.al.set(size: CGSize.zero)
  
- view.al.center()
- view.al.centerX()
- view.al.centerY()
+ try view.al.center()
+ try view.al.centerX()
+ try view.al.centerY()
  
- view.al.center(to: view2)
- view.al.centerX(to: view2)
- view.al.centerY(to: view2)
+ try view.al.center(to: view2)
+ try view.al.centerX(to: view2)
+ try view.al.centerY(to: view2)
  
  // Enumerate all non nil views and apply the following Visual Format Language
  view.al.applyVFL([
@@ -58,14 +62,10 @@ public enum Sides {
  ])
  ```
  */
+@MainActor
 public final class AutoLayout
 {
     private let base: View
-
-    var superview: View {
-        precondition(base.superview != nil, "This operation requires a non nil superview")
-        return base.superview!
-    }
 
     // MARK: - Initializing
 
@@ -115,15 +115,19 @@ public final class AutoLayout
     
     // MARK: - Centering views
     
-    public func center(to someView: View? = nil, constant: CGFloat = 0) {
-        centerX(to: someView, constant: constant)
-        centerY(to: someView, constant: constant)
+    public func center(to someView: View? = nil, constant: CGFloat = 0) throws {
+        try centerX(to: someView, constant: constant)
+        try centerY(to: someView, constant: constant)
     }
-    public func centerX(to someView: View? = nil, constant: CGFloat = 0) {
-        base.centerXAnchor.constraint(equalTo: (someView ?? superview).centerXAnchor, constant: constant).isActive = true
+
+    public func centerX(to someView: View? = nil, constant: CGFloat = 0) throws {
+        guard let targetView = someView ?? base.superview else { throw AutoLayoutError.missingSuperview }
+        base.centerXAnchor.constraint(equalTo: targetView.centerXAnchor, constant: constant).isActive = true
     }
-    public func centerY(to someView: View? = nil, constant: CGFloat = 0) {
-        base.centerYAnchor.constraint(equalTo: (someView ?? superview).centerYAnchor, constant: constant).isActive = true
+
+    public func centerY(to someView: View? = nil, constant: CGFloat = 0) throws {
+        guard let targetView = someView ?? base.superview else { throw AutoLayoutError.missingSuperview }
+        base.centerYAnchor.constraint(equalTo: targetView.centerYAnchor, constant: constant).isActive = true
     }
     
     // MARK: - Setting single attributes
@@ -155,8 +159,9 @@ public final class AutoLayout
         to someView: View? = nil,
         insets: EdgeInsets = EdgeInsetsZero,
         sides: [Sides] = [.top, .leading, .bottom, .trailing]
-    ) {
-        pinToView(someView ?? superview, insets: insets, sides: sides)
+    ) throws {
+        guard let targetView = someView ?? base.superview else { throw AutoLayoutError.missingSuperview }
+        pinToView(targetView, insets: insets, sides: sides)
     }
     
     @available(macOS 11.0, *)
@@ -164,8 +169,9 @@ public final class AutoLayout
         of someView: View? = nil,
         insets: EdgeInsets = EdgeInsetsZero,
         sides: [Sides] = [.top, .leading, .bottom, .trailing]
-    ) {
-        pinToLayoutGuide(guide: (someView ?? superview).layoutMarginsGuide, insets: insets, sides: sides)
+    ) throws {
+        guard let targetView = someView ?? base.superview else { throw AutoLayoutError.missingSuperview }
+        pinToLayoutGuide(guide: targetView.layoutMarginsGuide, insets: insets, sides: sides)
     }
 
     @available(macOS 11.0, *)
@@ -173,8 +179,9 @@ public final class AutoLayout
         of someView: View? = nil,
         insets: EdgeInsets = EdgeInsetsZero,
         sides: [Sides] = [.top, .leading, .bottom, .trailing]
-    ) {
-        pinToLayoutGuide(guide: (someView ?? superview).safeAreaLayoutGuide, insets: insets, sides: sides)
+    ) throws {
+        guard let targetView = someView ?? base.superview else { throw AutoLayoutError.missingSuperview }
+        pinToLayoutGuide(guide: targetView.safeAreaLayoutGuide, insets: insets, sides: sides)
     }
 
 #if os(iOS)
@@ -182,8 +189,9 @@ public final class AutoLayout
         of someView: UIView? = nil,
         insets: EdgeInsets = UIEdgeInsets.zero,
         sides: [Sides] = [.top, .leading, .bottom, .trailing]
-    ) {
-        pinToLayoutGuide(guide: (someView ?? superview).readableContentGuide, insets: insets, sides: sides)
+    ) throws {
+        guard let targetView = someView ?? base.superview else { throw AutoLayoutError.missingSuperview }
+        pinToLayoutGuide(guide: targetView.readableContentGuide, insets: insets, sides: sides)
     }
 #endif
 
